@@ -9,7 +9,7 @@ package de.karfau.signals
 	 *
 	 * @see http://groups.google.com/group/robotlegs/browse_thread/thread/f0daf0d47a572bc9/52d930531daff392#52d930531daff392
 	 */
-	public interface IResponseSignal extends ISignal
+	public interface IResponseSignal
 	{
 		/**
 		 *

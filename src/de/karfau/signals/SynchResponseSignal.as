@@ -1,6 +1,5 @@
 package de.karfau.signals
 {
-	import org.osflash.signals.ISignal;
 	import org.osflash.signals.Signal;
 	
 	/**
@@ -16,22 +15,9 @@ package de.karfau.signals
 		
 		private var hasReturned:Boolean = false;
 		private var didSucceed:Boolean = false;
-		
-		/** This will be dispatched after the success or fault has been dispatched.
-		 * Maybe is is not needed in the synchronous part and will be moved to the asynch part.
-		 *  listener-parameters: (signal:IResponseSignal)*/
-		private var _dispatched:Signal;
+		protected var hasResponded:Boolean = false;
 		
 		private var onFault:Signal;
-		
-		/** This will be dispatched after the success or fault has been dispatched.
-		 * Maybe is is not needed in the synchronous part and will be moved to the asynch part.
-		 *  listener-parameters: (signal:IResponseSignal)*/
-		public function get dispatched ():ISignal {
-			if (_dispatched == null)
-				_dispatched = new Signal(IResponseSignal);
-			return _dispatched;
-		}
 		
 		public function get returnsVoid ():Boolean {
 			return valueClasses.length == 0;
@@ -56,6 +42,8 @@ package de.karfau.signals
 				if (!(successType is Class)) {
 					throw new ArgumentError('Invalid successType argument: ' +
 																	' should be a Class but was:<' + successType + '>.');
+				} else {
+					valueClasses.push(successType);
 				}
 			}
 		}
@@ -77,10 +65,11 @@ package de.karfau.signals
 		 *
 		 * @param value the return value can (only) be omitted if returnsVoid is true;
 		 */
-		public function applySuccess (value:*=null):void {
+		public function applySuccess (value:*=null):SynchResponseSignal {
 			_resultValue = value;
 			setReadyToDispatch(true);
 			dispatch();
+			return this;
 		}
 		
 		/**
@@ -92,10 +81,11 @@ package de.karfau.signals
 		 *
 		 * @param info the value that will be passed to the fault-listener.
 		 */
-		public function applyFault (info:Object):void {
+		public function applyFault (info:Object):SynchResponseSignal {
 			_resultValue = info;
 			setReadyToDispatch(false);
 			dispatch();
+			return this;
 		}
 		
 		/**
@@ -131,8 +121,7 @@ package de.karfau.signals
 				} else {
 					onFault.dispatch(_resultValue);
 				}
-				if (_dispatched != null)
-					_dispatched.dispatch(this);
+				this.hasResponded = true;
 			}
 		}
 		
