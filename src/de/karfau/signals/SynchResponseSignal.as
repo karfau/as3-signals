@@ -69,8 +69,13 @@ package de.karfau.signals
 		}
 		
 		/**
+		 * Flags the call as successfull and ready to dispatch when a listener is added.
+		 * Previous calls of applySuccess or applyFault are overriden.
+		 * If the listener is already attached it will dispatch directly.
 		 *
-		 * @param value
+		 * "autoSuccess" through dispatch(resultValue) is not possible anymore.
+		 *
+		 * @param value the return value can (only) be omitted if returnsVoid is true;
 		 */
 		public function applySuccess (value:*=null):void {
 			_resultValue = value;
@@ -79,8 +84,13 @@ package de.karfau.signals
 		}
 		
 		/**
+		 * Flags the call as not successfull and ready to dispatch when a listener is added.
+		 * Previous calls of applySuccess or applyFault are overriden.
+		 * If the listener is already attached it will dispatch directly.
 		 *
-		 * @param info
+		 * "autoSuccess" through dispatch(resultValue) is not possible anymore.
+		 *
+		 * @param info the value that will be passed to the fault-listener.
 		 */
 		public function applyFault (info:Object):void {
 			_resultValue = info;
@@ -89,12 +99,14 @@ package de.karfau.signals
 		}
 		
 		/**
+		 * rather use applySuccess / applyFault to apply result of the function call,
+		 * because dispatch will be called as soon as everything is in place.
+		 *
 		 * this will only dispatch in the following cases:
 		 * a) either applySuccess or applyFault have been called and at least one responder has been added
 		 * b) a responder has been added and the success-result is passed as the first parameter AND HAS NOT BEEN passed before
 		 *
 		 * @param valueObjects
-		 *
 		 *
 		 */
 		override public function dispatch (... valueObjects):void {
