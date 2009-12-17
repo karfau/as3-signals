@@ -10,16 +10,22 @@ package de.karfau.signals
 	
 	public class PropertyRelaySignal extends DeluxeSignal
 	{
-		protected var properties:Array;
-		protected var _eventType:String;
+		/* START (modified) COPY FROM NativeRelySignal*/
+		protected var _eventType:String; //equates _name in NativeRelaySignal
+		/* END (modified) COPY FROM NativeRelySignal*/
+		
 		protected var _eventClass:Class;
+		protected var properties:Array;
 		
 		public function PropertyRelaySignal (target:IEventDispatcher, eventType:String, eventClass:Class=null, properties:Array=null) {
 			
+			/* START (modified) COPY FROM NativeRelySignal*/
 			_eventType = eventType;
 			_eventClass = eventClass || Event;
-			this.properties = [];
 			super(target);
+			/* END (modified) COPY FROM NativeRelySignal*/
+			
+			this.properties = [];
 			
 			if (properties) {
 				var dt:XML = describeType(eventClass);
@@ -30,8 +36,10 @@ package de.karfau.signals
 						this.properties.push(prop);
 						_valueClasses.push(getDefinitionByName(accessor.@type) as Class);
 					} else {
+						/* START (modified) COPY FROM NativeRelySignal*/
 						throw new ArgumentError('Invalid properties argument: property "' + prop
 																		+ '" not found in ' + _eventClass + '.');
+						/* END (modified) COPY FROM NativeRelySignal*/
 					}
 				}
 			}
@@ -61,12 +69,15 @@ package de.karfau.signals
 			//for (var i:int = listeners.length; i >= 0; i--) {
 			//	prio = Math.max(prio, listeners[i].priority);
 			//}
+			/* START (modified) COPY FROM NativeRelySignal*/
 			IEventDispatcher(_target).removeEventListener(_eventType, dispatch);
+			/* END (modified) COPY FROM NativeRelySignal*/
+			
 			IEventDispatcher(value).addEventListener(_eventType, dispatch, false, 0);
 			_target = value;
 		}
 		
-		/** @inheritDoc */
+		/* START COPY FROM NativeRelySignal*/ /** @inheritDoc */
 		override public function add (listener:Function, priority:int=0):void {
 			var prevListenerCount:uint = listeners.length;
 			// Try to add first because it may throw an exception.
@@ -77,11 +88,22 @@ package de.karfau.signals
 		}
 		
 		/** @inheritDoc */
+		override public function addOnce (listener:Function, priority:int=0):void {
+			var prevListenerCount:uint = listeners.length;
+			// Try to add first because it may throw an exception.
+			super.addOnce(listener);
+			// Account for cases where the same listener is added twice.
+			if (prevListenerCount == 0 && listeners.length == 1)
+				IEventDispatcher(target).addEventListener(_eventType, dispatch, false, priority);
+		}
+		
+		/** @inheritDoc */
 		override public function remove (listener:Function):void {
 			var prevListenerCount:uint = listeners.length;
 			super.remove(listener);
 			if (prevListenerCount == 1 && listeners.length == 0)
 				IEventDispatcher(_target).removeEventListener(_eventType, dispatch);
 		}
+	/* END COPY FROM NativeRelySignal*/
 	}
 }
