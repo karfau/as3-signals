@@ -36,10 +36,8 @@ package de.karfau.signals
 						this.properties.push(prop);
 						_valueClasses.push(getDefinitionByName(accessor.@type) as Class);
 					} else {
-						/* START (modified) COPY FROM NativeRelySignal*/
 						throw new ArgumentError('Invalid properties argument: property "' + prop
 																		+ '" not found in ' + _eventClass + '.');
-						/* END (modified) COPY FROM NativeRelySignal*/
 					}
 				}
 			}
@@ -59,6 +57,12 @@ package de.karfau.signals
 			}
 		}
 		
+		/**
+		 * Setting this value with a new value will remove the eventListener from the old target and add it to the new one.
+		 * NOTE: at the moment u will loose the priority that was set and the new priority will be 0.
+		 *
+		 * @see DeluxeSignal
+		 */
 		override public function set target (value:Object):void {
 			if (value == _target)
 				return;
