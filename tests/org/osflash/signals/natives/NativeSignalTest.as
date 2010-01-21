@@ -1,7 +1,6 @@
 package org.osflash.signals.natives
 {
 	import asunit.asserts.*;
-	import flash.ui.Mouse;
 
 	import asunit4.async.addAsync;
 
@@ -27,9 +26,8 @@ package org.osflash.signals.natives
 		[After]
 		public function tearDown():void
 		{
-			// tearDown() is getting called too early for some reason, so commenting out for now.
-			//clicked.removeAll();
-			//clicked = null;
+			clicked.removeAll();
+			clicked = null;
 		}
 		
 		protected function verifyNoListeners():void
@@ -94,6 +92,21 @@ package org.osflash.signals.natives
 			clicked.removeAll();
 			verifyNoListeners();
 		}
+		//////
+		
+		[Test]
+		public function add_listener_then_remove_function_not_in_listeners_should_do_nothing():void
+		{
+			clicked.add(newEmptyHandler());
+			clicked.remove(newEmptyHandler());
+			assertEquals(1, clicked.numListeners);
+		}
+		
+		private function newEmptyHandler():Function
+		{
+			return function(e:*):void {};
+		}
+		
 		//////
 		[Test(async)]
 		public function addOnce_and_dispatch_from_signal_should_remove_listener_automatically():void

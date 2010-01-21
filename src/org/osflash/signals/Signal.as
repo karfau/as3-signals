@@ -27,23 +27,18 @@ package org.osflash.signals
 		 * would allow: signal.dispatch("the Answer", 42)
 		 * but not: signal.dispatch(true, 42.5)
 		 * nor: signal.dispatch()
+		 *
+		 * NOTE: Subclasses cannot call super.apply(null, valueClasses),
+		 * but this constructor has logic to support super(valueClasses).
 		 */
 		public function Signal(...valueClasses)
 		{
 			listeners = [];
 			onceListeners = new Dictionary();
-			if (!valueClasses) return;
-			
-			_valueClasses = valueClasses.concat();
-			// loop backwards
-			for (var i:int = _valueClasses.length; i--; )
-			{
-				if (!(_valueClasses[i] is Class))
-				{
-					throw new ArgumentError('Invalid valueClasses argument: item at index ' + i
-						+ ' should be a Class but was:<' + _valueClasses[i] + '>.');
-				}
-			}
+			// Cannot use super.apply(null, valueClasses), so allow the subclass to call super(valueClasses).
+			if (valueClasses.length == 1 && valueClasses[0] is Array)
+				valueClasses = valueClasses[0];
+			setValueClasses(valueClasses);
 		}
 		
 		/** @inheritDoc */
@@ -65,6 +60,8 @@ package org.osflash.signals
 		/** @inheritDoc */
 		public function addOnce(listener:Function):void
 		{
+			// If the listener has been added as once, don't do anything.
+			if (onceListeners[listener]) return;
 			if (listeners.indexOf(listener) >= 0 && !onceListeners[listener])
 				throw new IllegalOperationError('You cannot add() then addOnce() the same listener without removing the relationship first.');
 			
@@ -75,6 +72,7 @@ package org.osflash.signals
 		/** @inheritDoc */
 		public function remove(listener:Function):void
 		{
+			if (listeners.indexOf(listener) == -1) return;
 			listeners.splice(listeners.indexOf(listener), 1);
 			delete onceListeners[listener];
 		}
@@ -89,18 +87,25 @@ package org.osflash.signals
 		/** @inheritDoc */
 		public function dispatch(...valueObjects):void
 		{
+			// Validate value objects against pre-defined value classes.
+			var valueObject:Object;
+			var valueClass:Class;
 			var len:int = _valueClasses.length;
 			for (var i:int = 0; i < len; i++)
 			{
-				if (!(valueObjects[i] is _valueClasses[i]))
-					throw new ArgumentError('Value object <'+valueObjects[i]+'> is not an instance of <'+_valueClasses[i]+'>.');
+				// null is allowed to pass through.
+				if ( (valueObject = valueObjects[i]) === null
+					|| valueObject is (valueClass = _valueClasses[i]) )
+					continue;
+					
+				throw new ArgumentError('Value object <' + valueObject
+					+ '> is not an instance of <' + valueClass + '>.');
 			}
 
-			//// Call listeners.
 			if (!listeners.length) return;
 			
 			//TODO: investigate performance of various approaches
-			
+			//// Call listeners.
 			var listener:Function;
 			switch (valueObjects.length)
 			{
@@ -127,6 +132,20 @@ package org.osflash.signals
 						if (onceListeners[listener]) remove(listener);
 						listener.apply(null, valueObjects);
 					}
+			}
+		}
+		
+		protected function setValueClasses(valueClasses:Array):void
+		{
+			_valueClasses = valueClasses || [];
+			
+			for (var i:int = _valueClasses.length; i--; )
+			{
+				if (!(_valueClasses[i] is Class))
+				{
+					throw new ArgumentError('Invalid valueClasses argument: item at index ' + i
+						+ ' should be a Class but was:<' + _valueClasses[i] + '>.');
+				}
 			}
 		}
 		
