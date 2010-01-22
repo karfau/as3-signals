@@ -38,7 +38,7 @@ package de.karfau.signals
 			super(target, eventType);
 			
 			/*if valueClasses are not provided this will call the listeners with no parameter*/
-			setValueClasses(valueClasses);
+			setValueClasses(propertyTypes);
 		
 		}
 		
@@ -70,12 +70,14 @@ package de.karfau.signals
 					 wich will result in an ArgumentError as soon as the signal is set up.
 					 (We can not validate the returned types as the values will most likly be null)
 					 Cases where this need to be surpressed:
-					 - _eventClass has no zero-parameter-constructor
+					 - _eventClass has no eventType(-only)-parameter-constructor
 					 - value does processing of anything else then the given object, wich raises an error at the time the function is set
 				 - did I miss something?*/
 				if (checkValidityWithInitialCall) {
 					try {
-						var testResult:Array = value.call(null, new _eventClass());
+						
+						var testResult:Array = value.call(null, new _eventClass(_eventType));
+						
 						if (valueClasses.length > 0 && testResult.length != valueClasses.length) {
 							throw new ArgumentError("calling propertyFilterFunction initially returned an array with a length of " + testResult.length +
 																			" but was expected to return an array with this length an types as in valueClasses:[" + valueClasses + "]");
