@@ -52,7 +52,7 @@ package de.karfau.signals
 		/**
 		 *
 		 * @param value
-		 * @param checkValidityWithInitialCall
+		 * @param checkValidityWithInitialCall setting this to false will delay typechecking of the filterfunction to the time when it is dispatched.
 		 * @throws ArgumentError
 		 * @throws ArgumentError
 		 * @throws ArgumentError
@@ -70,7 +70,7 @@ package de.karfau.signals
 					 wich will result in an ArgumentError as soon as the signal is set up.
 					 (We can not validate the returned types as the values will most likly be null)
 					 Cases where this need to be surpressed:
-					 - _eventClass has no eventType(-only)-parameter-constructor
+					 - _eventClass has no constructor-with-only-eventType-as-required-parameter
 					 - value does processing of anything else then the given object, wich raises an error at the time the function is set
 				 - did I miss something?*/
 				if (checkValidityWithInitialCall) {
@@ -78,14 +78,14 @@ package de.karfau.signals
 						
 						var testResult:Array = value.call(null, new _eventClass(_eventType));
 						
-						if (valueClasses.length > 0 && testResult.length != valueClasses.length) {
-							throw new ArgumentError("calling propertyFilterFunction initially returned an array with a length of " + testResult.length +
-																			" but was expected to return an array with this length an types as in valueClasses:[" + valueClasses + "]");
+						if (valueClasses.length > 0 && testResult.length < valueClasses.length) {
+							throw new ArgumentError("length of the array returned by propertyFilterFunction was " + testResult.length +
+																			" expected to return an array that matches valueClasses about length an types: [" + valueClasses + "]");
 							
 						}
 					} catch (error:Error) {
-						throw new ArgumentError("calling propertyFilterFunction initially raised the following Error: <" + error +
-																		"> the initial call can be supressed by using 'setPropertyFilterFunction(yourFunction,false);'. Read the docs before doing this!");
+						throw new ArgumentError("initially calling propertyFilterFunction raised the following Error: \n<" + error +
+																		">\n the initial call can be supressed by using 'setPropertyFilterFunction(yourFunction,false);'. Read the docs before doing this!");
 						
 					}
 				} else {
