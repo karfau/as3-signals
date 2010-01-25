@@ -19,6 +19,10 @@ package de.karfau.signals
 		 */
 		protected var _eventClass:Class;
 		
+		public function get eventClass ():Class {
+			return _eventClass;
+		}
+		
 		/**
 		 *
 		 * @param target The IEventDispatcher that dispatches this event to filter the properties from.
@@ -53,6 +57,7 @@ package de.karfau.signals
 		 *
 		 * @param value
 		 * @param checkValidityWithInitialCall setting this to false will delay typechecking of the filterfunction to the time when it is dispatched.
+		 * see inline comments for more details.
 		 * @throws ArgumentError
 		 * @throws ArgumentError
 		 * @throws ArgumentError
@@ -68,7 +73,7 @@ package de.karfau.signals
 				/*the benefit of calling it here is that we can validate the type of the parameter the function has fits
 					 and we can match the length of the returned array to the length of valueClasses,
 					 wich will result in an ArgumentError as soon as the signal is set up.
-					 (We can not validate the returned types as the values will most likly be null)
+					 (We can not validate the returned types as the values will most likly be null, if taken directly from the dummy-value)
 					 Cases where this need to be surpressed:
 					 - _eventClass has no constructor-with-only-eventType-as-required-parameter
 					 - value does processing of anything else then the given object, wich raises an error at the time the function is set
@@ -84,7 +89,7 @@ package de.karfau.signals
 							
 						}
 					} catch (error:Error) {
-						throw new ArgumentError("initially calling propertyFilterFunction raised the following Error: \n<" + error +
+						throw new ArgumentError("initially calling propertyFilterFunction raised the following error: \n<" + error +
 																		">\n the initial call can be supressed by using 'setPropertyFilterFunction(yourFunction,false);'. Read the docs before doing this!");
 						
 					}
