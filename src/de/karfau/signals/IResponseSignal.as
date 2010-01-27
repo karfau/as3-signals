@@ -17,6 +17,11 @@ package de.karfau.signals
 		 * @param fault the function that will be called if an error occured while processing passing info about the error.
 		 */
 		function addResponse (sucess:Function, fault:Function):void;
-	
+		
+		function get successClass ():Class;
+		
+		function get faultClass ():Class;
+		
+		function get returnsVoid ():Boolean;
 	}
 }

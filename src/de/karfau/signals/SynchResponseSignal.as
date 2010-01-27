@@ -23,6 +23,14 @@ package de.karfau.signals
 			return valueClasses.length == 0;
 		}
 		
+		public function get successClass ():Class {
+			return this.returnsVoid ? null : _valueClasses[0];
+		}
+		
+		public function get faultClass ():Class {
+			return this.onFault.valueClasses[0];
+		}
+		
 		/**
 		 *
 		 * @param successType null(dafeult) equates to a return-type void
@@ -34,18 +42,12 @@ package de.karfau.signals
 			if (faultType == null) {
 				onFault = new Signal(Object);
 			} else {
-				onFault = new Signal(faultType);
+				onFault = new Signal(faultType || Object);
 			}
 			
 			super();
-			if (successType != null) {
-				if (!(successType is Class)) {
-					throw new ArgumentError('Invalid successType argument: ' +
-																	' should be a Class but was:<' + successType + '>.');
-				} else {
-					valueClasses.push(successType);
-				}
-			}
+			if (successType != null)
+				setValueClasses([successType]);
 		}
 		
 		/** @inheritDoc */
@@ -82,7 +84,11 @@ package de.karfau.signals
 		 * @param info the value that will be passed to the fault-listener.
 		 */
 		public function applyFault (info:Object):SynchResponseSignal {
-			_resultValue = info;
+			if (info is this.faultClass) {
+				this._resultValue = info;
+			} else {
+				throw new ArgumentError("info " + info + " is not of expected type " + this.faultClass);
+			}
 			setReadyToDispatch(false);
 			dispatch();
 			return this;
@@ -100,18 +106,20 @@ package de.karfau.signals
 		 *
 		 */
 		override public function dispatch (... valueObjects):void {
-			
 			/*try to autoSuccess through dispatch with valueObjects[0] as return value:
 			 listeners already need to be attached and there is no result yet*/
-			if (super.numListeners > 0 && !hasReturned) {
+			/*!hasReturned implies !hasResponded*/
+			if (!hasReturned && super.numListeners > 0) {
 				if (!returnsVoid && valueObjects[0] is valueClasses[0]) {
-					applySuccess(valueObjects[0])
+					applySuccess(valueObjects[0]); //this includes a call to dispatch so:
+					return;
 				} else if (returnsVoid && valueObjects.length == 0) {
-					applySuccess();
+					applySuccess(); //this includes a call to dispatch so:
+					return;
 				}
 			}
 			
-			if (hasReturned && super.numListeners > 0) {
+			if (!hasResponded && hasReturned && super.numListeners > 0) {
 				if (didSucceed) {
 					if (valueClasses.length == 0) {
 						super.dispatch();
