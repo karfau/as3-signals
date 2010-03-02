@@ -18,6 +18,7 @@ package org.osflash.signals
 		protected var _valueClasses:Array;		// of Class
 		protected var listeners:Array;			// of Function
 		protected var onceListeners:Dictionary;	// of Function
+		protected var dispatching:Boolean = false;;
 		
 		/**
 		 * Creates a Signal instance to dispatch value objects.
@@ -53,7 +54,7 @@ package org.osflash.signals
 			if (onceListeners[listener])
 				throw new IllegalOperationError('You cannot addOnce() then add() the same listener without removing the relationship first.');
 		
-			createListenerRelationship(listener);
+			registerListener(listener);
 		}
 		
 		/** @inheritDoc */
@@ -64,22 +65,27 @@ package org.osflash.signals
 			if (listeners.indexOf(listener) >= 0 && !onceListeners[listener])
 				throw new IllegalOperationError('You cannot add() then addOnce() the same listener without removing the relationship first.');
 			
-			createListenerRelationship(listener);
+			registerListener(listener);
 			onceListeners[listener] = true;
 		}
 		
 		/** @inheritDoc */
 		public function remove(listener:Function):void
 		{
-			if (listeners.indexOf(listener) == -1) return;
-			listeners.splice(listeners.indexOf(listener), 1);
+			var index:int = listeners.indexOf(listener);
+			if (index == -1) return;
+			if (dispatching) listeners = listeners.slice();
+			listeners.splice(index, 1);
 			delete onceListeners[listener];
 		}
 		
 		/** @inheritDoc */
 		public function removeAll():void
 		{
-			listeners.length = 0;
+			if (dispatching)
+				listeners = [];
+			else
+				listeners.length = 0;
 			onceListeners = new Dictionary();
 		}
 		
@@ -103,14 +109,15 @@ package org.osflash.signals
 
 			if (!listeners.length) return;
 			
-			//TODO: investigate performance of various approaches
 			//// Call listeners.
+			
+			// During a dispatch, add() and remove() should clone listeners array instead of modifying it.
+			dispatching = true;
 			var listener:Function;
 			switch (valueObjects.length)
 			{
 				case 0:
-					// Clone listeners array because add/remove may occur during the dispatch.
-					for each (listener in listeners.concat())
+					for each (listener in listeners)
 					{
 						if (onceListeners[listener]) remove(listener);
 						listener();
@@ -118,7 +125,7 @@ package org.osflash.signals
 					break;
 					
 				case 1:
-					for each (listener in listeners.concat())
+					for each (listener in listeners)
 					{
 						if (onceListeners[listener]) remove(listener);
 						listener(valueObjects[0]);
@@ -126,12 +133,13 @@ package org.osflash.signals
 					break;
 					
 				default:
-					for each (listener in listeners.concat())
+					for each (listener in listeners)
 					{
 						if (onceListeners[listener]) remove(listener);
 						listener.apply(null, valueObjects);
 					}
 			}
+			dispatching = false;
 		}
 		
 		protected function setValueClasses(valueClasses:Array):void
@@ -148,7 +156,7 @@ package org.osflash.signals
 			}
 		}
 		
-		protected function createListenerRelationship(listener:Function):void
+		protected function registerListener(listener:Function):void
 		{
 			// function.length is the number of arguments.
 			if (listener.length < _valueClasses.length)
@@ -163,6 +171,8 @@ package org.osflash.signals
 				listeners[0] = listener;
 				return;
 			}
+			
+			if (dispatching) listeners = listeners.slice();
 			
 			// Don't add the same listener twice.
 			if (listeners.indexOf(listener) >= 0)
