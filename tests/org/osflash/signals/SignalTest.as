@@ -149,6 +149,16 @@ package org.osflash.signals
 			completed.add(func);
 			assertEquals(1, completed.numListeners);
 		}
+		
+		[Test]
+		public function addOnce_same_listener_twice_should_only_add_it_once():void
+		{
+			var func:Function = newEmptyHandler();
+			completed.addOnce(func);
+			completed.addOnce(func);
+			assertEquals(1, completed.numListeners);
+		}
+		
 		//////
 		[Test]
 		public function dispatch_non_IEvent_without_error():void
@@ -190,6 +200,18 @@ package org.osflash.signals
 		private function allRemover():void
 		{
 			completed.removeAll();
+		}
+		//////
+		[Test]
+		public function adding_a_listener_during_dispatch_should_not_call_it():void
+		{
+			completed.add(addAsync(addListenerDuringDispatch, 10));
+			completed.dispatch(new GenericEvent());
+		}
+		
+		private function addListenerDuringDispatch():void
+		{
+			completed.add(failIfCalled);
 		}
 	}
 }
